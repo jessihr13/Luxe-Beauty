@@ -10,7 +10,11 @@ interface DemandForecastChartProps {
 
 export default function DemandForecastChart({ forecast }: DemandForecastChartProps) {
     const chartData = useMemo(() => {
-        const data = [];
+        const data: Array<{
+            month: string;
+            historical: number | null;
+            predicted: number | null;
+        }> = [];
 
         // Datos históricos
         forecast.historicalSales.forEach((sales, index) => {

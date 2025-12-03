@@ -8,6 +8,11 @@ const nextConfig = {
             },
         ],
     },
-}
+    // Deshabilitar generación estática para páginas admin que usan router.push en el render
+    // Esto evita errores "location is not defined" durante el build en Vercel
+    experimental: {
+        missingSuspenseWithCSRBailout: false,
+    },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

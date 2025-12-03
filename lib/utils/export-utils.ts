@@ -57,20 +57,17 @@ export function exportProductsToExcel(products: Product[], filename: string = 'i
 export function exportOrdersToExcel(orders: LegacyOrder[], filename: string = 'pedidos') {
     const data = orders.map(o => ({
         'Número': o.orderNumber,
-        'Fecha': o.orderDate.toLocaleDateString('es-ES'),
+        'Fecha': o.createdAt.toLocaleDateString('es-ES'),
         'Cliente': o.customerName,
         'Email': o.customerEmail,
         'Productos': o.items.length,
         'Subtotal': `$${o.subtotal.toFixed(2)}`,
-        'Envío': `$${o.shippingCost.toFixed(2)}`,
+        'Envío': `$${o.shipping.toFixed(2)}`,
         'Total': `$${o.total.toFixed(2)}`,
         'Estado': o.status === 'pending' ? 'Pendiente' :
             o.status === 'processing' ? 'Procesando' :
                 o.status === 'shipped' ? 'Enviado' :
                     o.status === 'delivered' ? 'Entregado' : 'Cancelado',
-        'Método Pago': o.paymentMethod === 'card' ? 'Tarjeta' :
-            o.paymentMethod === 'paypal' ? 'PayPal' :
-                o.paymentMethod === 'transfer' ? 'Transferencia' : 'Efectivo',
     }));
 
     const wb = XLSX.utils.book_new();
@@ -86,7 +83,6 @@ export function exportOrdersToExcel(orders: LegacyOrder[], filename: string = 'p
         { wch: 10 }, // Envío
         { wch: 12 }, // Total
         { wch: 12 }, // Estado
-        { wch: 15 }, // Método Pago
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
@@ -102,7 +98,7 @@ export function exportEmployeesToExcel(employees: Employee[], filename: string =
         'Nombre': e.name,
         'Email': e.email,
         'Teléfono': e.phone,
-        'Puesto': e.position,
+        'Rol': e.role,
         'Departamento': e.department,
         'Salario': `$${e.salary.toLocaleString()}`,
         'Fecha Ingreso': e.hireDate.toLocaleDateString('es-ES'),
@@ -117,7 +113,7 @@ export function exportEmployeesToExcel(employees: Employee[], filename: string =
         { wch: 25 }, // Nombre
         { wch: 30 }, // Email
         { wch: 15 }, // Teléfono
-        { wch: 20 }, // Puesto
+        { wch: 20 }, // Rol
         { wch: 15 }, // Departamento
         { wch: 12 }, // Salario
         { wch: 15 }, // Fecha Ingreso
@@ -141,7 +137,6 @@ export function exportExpensesToExcel(expenses: Expense[], filename: string = 'g
         'Método Pago': e.paymentMethod === 'cash' ? 'Efectivo' :
             e.paymentMethod === 'card' ? 'Tarjeta' :
                 e.paymentMethod === 'transfer' ? 'Transferencia' : 'Cheque',
-        'Proveedor': e.vendor || 'N/A',
         'Notas': e.notes || '',
     }));
 
@@ -155,7 +150,6 @@ export function exportExpensesToExcel(expenses: Expense[], filename: string = 'g
         { wch: 40 }, // Descripción
         { wch: 12 }, // Monto
         { wch: 15 }, // Método Pago
-        { wch: 20 }, // Proveedor
         { wch: 30 }, // Notas
     ];
 

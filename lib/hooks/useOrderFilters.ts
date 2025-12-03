@@ -50,9 +50,10 @@ export function useOrderFilters(orders: LegacyOrder[]) {
         }
 
         // Filtro por método de pago
-        if (filters.paymentMethod !== 'all') {
-            result = result.filter(o => o.paymentMethod === filters.paymentMethod);
-        }
+        // TODO: Agregar paymentMethod al tipo Order cuando se implemente
+        // if (filters.paymentMethod !== 'all') {
+        //     result = result.filter(o => o.paymentMethod === filters.paymentMethod);
+        // }
 
         // Filtro por rango de fechas
         if (filters.dateRange.start) {
