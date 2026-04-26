@@ -39,7 +39,9 @@ export default function ExecutiveDashboardPage() {
 
     // KPIs principales
     const kpis = useMemo(() => {
-        const totalCustomers = new Set(orders.map(o => o.customer.email)).size;
+        const totalCustomers = new Set(
+            orders.map(o => o.customer?.email || o.email || 'unknown')
+          ).size;
         const totalOrders = orders.length;
         const avgOrderValue = profitMetrics.totalRevenue / totalOrders;
         const productsInStock = products.filter(p => p.stock > 0).length;
