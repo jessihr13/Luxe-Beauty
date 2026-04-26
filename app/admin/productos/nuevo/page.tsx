@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { createProduct } from '@/lib/data/productManager';
+import { useProductsStore } from '@/lib/products/productsStore';
+import { useToast } from '@/lib/hooks/useToast';
 import { Product } from '@/lib/data/products';
 import { ArrowLeft, Save } from 'lucide-react';
+import { LoadingButton } from '@/components/ui/LoadingSpinner';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function NewProductPage() {
     const router = useRouter();
@@ -26,6 +29,13 @@ export default function NewProductPage() {
         sku: '',
     });
 
+    const addProduct = useProductsStore(state => state.addProduct);
+    const toast = useToast();
+
+    useEffect(() => {
+        useProductsStore.persist.rehydrate();
+    }, []);
+
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
@@ -39,39 +49,45 @@ export default function NewProductPage() {
         e.preventDefault();
         setSaving(true);
 
-        const newProduct = createProduct({
-            name: formData.name,
-            shortDescription: formData.shortDescription,
-            description: formData.description,
-            price: formData.price,
-            originalPrice: formData.originalPrice || undefined,
-            cost: formData.cost,
-            category: formData.category,
-            subcategory: formData.subcategory,
-            images: [formData.image],
-            image: formData.image,
-            stock: formData.stock,
-            rating: 5,
-            reviewCount: 0,
-            ingredients: [],
-            benefits: [],
-            skinTypes: ['Todos'],
-            neuromarketing: {
-                scarcityLevel: 'none',
-                isBestseller: false,
-                isTrending: false,
-                isNew: true,
-                socialProof: {
-                    purchaseCount: 0,
-                    viewingNow: 0,
+        try {
+            addProduct({
+                name: formData.name,
+                shortDescription: formData.shortDescription,
+                description: formData.description,
+                price: formData.price,
+                originalPrice: formData.originalPrice || undefined,
+                cost: formData.cost,
+                category: formData.category,
+                subcategory: formData.subcategory,
+                images: [formData.image],
+                image: formData.image,
+                stock: formData.stock,
+                rating: 5,
+                reviewCount: 0,
+                ingredients: [],
+                benefits: [],
+                skinTypes: ['Todos'],
+                neuromarketing: {
+                    scarcityLevel: 'none',
+                    isBestseller: false,
+                    isTrending: false,
+                    isNew: true,
+                    socialProof: {
+                        purchaseCount: 0,
+                        viewingNow: 0,
+                    },
                 },
-            },
-        });
+            });
 
-        setTimeout(() => {
+            setTimeout(() => {
+                setSaving(false);
+                toast.success(`✅ Producto "${formData.name}" creado exitosamente`);
+                router.push('/admin/productos');
+            }, 500);
+        } catch (error) {
             setSaving(false);
-            router.push('/admin/productos');
-        }, 500);
+            toast.error('❌ Error al crear el producto');
+        }
     };
 
     return (

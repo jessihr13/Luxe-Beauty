@@ -1,34 +1,45 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { products } from '@/lib/data/products';
-import { getAllOrders } from '@/lib/data/orders';
+import { useOrdersStore } from '@/lib/orders/ordersStore';
+import { convertToLegacyOrders } from '@/lib/orders/orderAdapter';
 import { calculateProductProfitability, calculateGlobalMetrics } from '@/lib/analytics/profitabilityAnalysis';
 import { generateCohortAnalysis, calculateAverageLTV } from '@/lib/analytics/cohortAnalysis';
 import { generateDemandForecast } from '@/lib/analytics/demandPrediction';
 import { ArrowLeft, DollarSign, TrendingUp, Users, Package, ShoppingCart, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function ExecutiveDashboardPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
 
-    // Hooks deben ir antes de cualquier return condicional
+    const getAllOrders = useOrdersStore(state => state.getAllOrders);
     const orders = getAllOrders();
+
+    useEffect(() => {
+        setMounted(true);
+        useOrdersStore.persist.rehydrate();
+    }, []);
+
+    // Convert to legacy format for analytics
+    const legacyOrders = useMemo(() => convertToLegacyOrders(orders), [orders]);
 
     // Calcular métricas consolidadas
     const profitability = useMemo(() => calculateProductProfitability(products), []);
     const profitMetrics = useMemo(() => calculateGlobalMetrics(profitability), [profitability]);
-    const cohortData = useMemo(() => generateCohortAnalysis(orders), [orders]);
+    const cohortData = useMemo(() => generateCohortAnalysis(legacyOrders), [legacyOrders]);
     const avgLTV = useMemo(() => calculateAverageLTV(cohortData), [cohortData]);
-    const forecasts = useMemo(() => generateDemandForecast(products, orders, 3), [orders]);
+    const forecasts = useMemo(() => generateDemandForecast(products, legacyOrders, 3), [legacyOrders]);
 
     // KPIs principales
     const kpis = useMemo(() => {
-        const totalCustomers = new Set(orders.map(o => o.customerEmail)).size;
+        const totalCustomers = new Set(orders.map(o => o.customer.email)).size;
         const totalOrders = orders.length;
         const avgOrderValue = profitMetrics.totalRevenue / totalOrders;
         const productsInStock = products.filter(p => p.stock > 0).length;
@@ -92,7 +103,7 @@ export default function ExecutiveDashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -327,6 +338,6 @@ export default function ExecutiveDashboardPage() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

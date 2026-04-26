@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { ShoppingCart, User, LogOut, Menu, X, Search } from 'lucide-react';
 import { slideInFromLeft } from '@/lib/animations';
+import CartButton from '@/components/cart/CartButton';
+import CartDrawer from '@/components/cart/CartDrawer';
 
 export default function Navigation() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,7 +33,7 @@ export default function Navigation() {
             initial="hidden"
             animate="visible"
             variants={slideInFromLeft}
-            className="fixed top-0 left-0 right-0 z-50 glass-effect"
+            className="fixed top-0 left-0 right-0 z-[100] glass-effect"
         >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
@@ -92,12 +94,7 @@ export default function Navigation() {
                             </Link>
                         )}
 
-                        <button className="relative text-gray-700 dark:text-gray-200 hover:text-rose-gold-600 dark:hover:text-rose-gold-400 transition-colors">
-                            <ShoppingCart className="w-6 h-6" />
-                            <span className="absolute -top-2 -right-2 bg-rose-gold-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                0
-                            </span>
-                        </button>
+                        <CartButton />
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -163,6 +160,8 @@ export default function Navigation() {
                     </motion.div>
                 )}
             </div>
+
+            <CartDrawer />
         </motion.nav>
     );
 }

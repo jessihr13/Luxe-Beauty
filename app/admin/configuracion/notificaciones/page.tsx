@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { ArrowLeft, Mail, Bell, Package, TrendingUp, Save } from 'lucide-react';
 import Link from 'next/link';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function NotificationSettingsPage() {
     const router = useRouter();
@@ -47,7 +48,7 @@ export default function NotificationSettingsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -265,6 +266,6 @@ export default function NotificationSettingsPage() {
                     </p>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

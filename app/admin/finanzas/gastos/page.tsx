@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,25 +17,45 @@ import {
     CreditCard
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import {
-    expenses,
-    getTotalExpenses,
-    getTotalExpensesByCategory,
-    categoryInfo,
-    type Expense,
-    type ExpenseCategory
-} from '@/lib/data/expenses';
+import { useExpensesStore, categoryInfo, type ExpenseCategory } from '@/lib/finances/expensesStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { fadeIn, staggerContainer } from '@/lib/animations';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function ExpensesPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all');
     const [searchTerm, setSearchTerm] = useState('');
+
+    const getAllExpenses = useExpensesStore(state => state.getAllExpenses);
+    const getTotalExpenses = useExpensesStore(state => state.getTotalExpenses);
+    const getTotalByCategory = useExpensesStore(state => state.getTotalExpensesByCategory);
+    const deleteExpense = useExpensesStore(state => state.deleteExpense);
+
+    const expenses = getAllExpenses();
+
+    useEffect(() => {
+        setMounted(true);
+        useExpensesStore.persist.rehydrate();
+    }, []);
 
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
+    }
+
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
     }
 
     // Filter expenses
@@ -47,41 +67,26 @@ export default function ExpensesPage() {
 
     // Calculate totals
     const totalExpenses = getTotalExpenses();
-    const categoryTotals = {
-        logistics: getTotalExpensesByCategory('logistics'),
-        marketing: getTotalExpensesByCategory('marketing'),
-        salaries: getTotalExpensesByCategory('salaries'),
-        general: getTotalExpensesByCategory('general'),
-        technology: getTotalExpensesByCategory('technology'),
-    };
+    const categoryTotals = getTotalByCategory();
 
     const handleDelete = (id: string) => {
         if (confirm('¿Estás seguro de eliminar este gasto?')) {
-            // deleteExpense(id);
-            alert('Gasto eliminado (demo)');
+            deleteExpense(id);
         }
     };
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Gestión de Gastos
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Control completo de gastos operativos
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Gestión de Gastos
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Control completo de gastos operativos
+                        </p>
                     </div>
 
                     <Link
@@ -251,7 +256,7 @@ export default function ExpensesPage() {
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4 text-gray-400" />
                                                         <span className="text-sm">
-                                                            {expense.date.toLocaleDateString('es-ES')}
+                                                            {new Date(expense.date).toLocaleDateString('es-ES')}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -268,13 +273,13 @@ export default function ExpensesPage() {
                                                 <td className="text-center py-3 px-4">
                                                     <div className="flex items-center justify-center gap-1">
                                                         <CreditCard className="w-4 h-4 text-gray-400" />
-                                                        <span className="text-sm capitalize">{expense.paymentMethod}</span>
+                                                        <span className="text-sm capitalize">{expense.paymentMethod || 'N/A'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="text-center py-3 px-4">
                                                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${expense.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                                            expense.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        expense.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {expense.status === 'paid' ? 'Pagado' :
                                                             expense.status === 'pending' ? 'Pendiente' : 'Cancelado'}
@@ -306,6 +311,6 @@ export default function ExpensesPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

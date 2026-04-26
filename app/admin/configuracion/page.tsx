@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, Bell, Shield, Palette, Database, Settings } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function ConfiguracionPage() {
     const router = useRouter();
@@ -43,7 +44,7 @@ export default function ConfiguracionPage() {
             color: 'purple',
             bgColor: 'bg-purple-50',
             iconColor: 'text-purple-600',
-            disabled: true,
+            disabled: false,
         },
         {
             title: 'Base de Datos',
@@ -58,25 +59,17 @@ export default function ConfiguracionPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Configuración
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Administra las preferencias generales del sistema
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Configuración
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Administra las preferencias generales del sistema
+                        </p>
                     </div>
                 </div>
 
@@ -152,6 +145,6 @@ export default function ConfiguracionPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

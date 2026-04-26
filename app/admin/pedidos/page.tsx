@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,26 +17,39 @@ import {
     Eye
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getAllOrders, orderStatusInfo, type OrderStatus } from '@/lib/data/orders';
+import { useOrdersStore } from '@/lib/orders/ordersStore';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 import { fadeIn, staggerContainer } from '@/lib/animations';
 
 export default function OrdersPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
+    const [filterStatus, setFilterStatus] = useState<'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'all'>('all');
+    const [mounted, setMounted] = useState(false);
+    
+    const getAllOrders = useOrdersStore(state => state.getAllOrders);
+    const orders = getAllOrders();
+
+    useEffect(() => {
+        setMounted(true);
+        useOrdersStore.persist.rehydrate();
+    }, []);
 
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
     }
 
-    const orders = getAllOrders();
+    if (!mounted) {
+        return <AdminPageLayout><div>Cargando...</div></AdminPageLayout>;
+    }
 
     // Filter orders
     const filteredOrders = orders.filter(order => {
         const matchesSearch =
-            order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -53,25 +66,17 @@ export default function OrdersPage() {
     const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Gestión de Pedidos
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Control de órdenes y envíos
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Gestión de Pedidos
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Control de órdenes y envíos
+                        </p>
                     </div>
                     <Link
                         href="/admin/pedidos/nuevo"
@@ -160,7 +165,7 @@ export default function OrdersPage() {
 
                         <select
                             value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value as OrderStatus | 'all')}
+                            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-gold-500 focus:border-transparent"
                         >
                             <option value="all">Todos los estados</option>
@@ -205,15 +210,21 @@ export default function OrdersPage() {
                             </thead>
                             <tbody>
                                 {filteredOrders.map(order => {
-                                    const statusInfo = orderStatusInfo[order.status];
+                                    const statusInfo = {
+                                        pending: { icon: '⏳', name: 'Pendiente' },
+                                        processing: { icon: '⚙️', name: 'Procesando' },
+                                        shipped: { icon: '📦', name: 'Enviado' },
+                                        delivered: { icon: '✅', name: 'Entregado' },
+                                        cancelled: { icon: '❌', name: 'Cancelado' }
+                                    }[order.status];
 
                                     return (
                                         <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
                                             <td className="py-3 px-4">
                                                 <div>
-                                                    <p className="font-semibold text-gray-900">{order.orderNumber}</p>
+                                                    <p className="font-semibold text-gray-900">{order.id}</p>
                                                     <p className="text-xs text-gray-600">
-                                                        {order.createdAt.toLocaleDateString('es-ES')}
+                                                        {new Date(order.createdAt).toLocaleDateString('es-ES')}
                                                     </p>
                                                 </div>
                                             </td>
@@ -229,7 +240,7 @@ export default function OrdersPage() {
                                                 </span>
                                             </td>
                                             <td className="text-center py-3 px-4 text-sm text-gray-600">
-                                                {order.createdAt.toLocaleDateString('es-ES', {
+                                                {new Date(order.createdAt).toLocaleDateString('es-ES', {
                                                     day: '2-digit',
                                                     month: 'short'
                                                 })}
@@ -248,13 +259,7 @@ export default function OrdersPage() {
                                                 </span>
                                             </td>
                                             <td className="text-center py-3 px-4">
-                                                {order.trackingNumber ? (
-                                                    <span className="text-xs font-mono text-blue-600">
-                                                        {order.trackingNumber}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">-</span>
-                                                )}
+                                                <span className="text-xs text-gray-400">-</span>
                                             </td>
                                             <td className="text-center py-3 px-4">
                                                 <Link
@@ -279,6 +284,6 @@ export default function OrdersPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

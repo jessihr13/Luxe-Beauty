@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,25 +17,45 @@ import {
     DollarSign
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import {
-    employees,
-    getTotalSalaries,
-    getActiveEmployees,
-    roleInfo,
-    type Employee,
-    type EmployeeRole
-} from '@/lib/data/employees';
+import { useEmployeesStore, roleInfo, type EmployeeRole } from '@/lib/employees/employeesStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { fadeIn, staggerContainer } from '@/lib/animations';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function EmployeesPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [selectedRole, setSelectedRole] = useState<EmployeeRole | 'all'>('all');
     const [searchTerm, setSearchTerm] = useState('');
+
+    const getAllEmployees = useEmployeesStore(state => state.getAllEmployees);
+    const getActiveEmployees = useEmployeesStore(state => state.getActiveEmployees);
+    const deleteEmployee = useEmployeesStore(state => state.deleteEmployee);
+
+    const employees = getAllEmployees();
+    const activeEmployees = getActiveEmployees();
+
+    useEffect(() => {
+        setMounted(true);
+        useEmployeesStore.persist.rehydrate();
+    }, []);
 
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
+    }
+
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
     }
 
     // Filter employees
@@ -47,36 +67,26 @@ export default function EmployeesPage() {
     });
 
     // Calculate metrics
-    const totalSalaries = getTotalSalaries();
-    const activeEmployees = getActiveEmployees();
+    const totalSalaries = employees.reduce((sum, e) => sum + e.salary, 0);
 
     const handleDelete = (id: string) => {
         if (confirm('¿Estás seguro de eliminar este empleado?')) {
-            // deleteEmployee(id);
-            alert('Empleado eliminado (demo)');
+            deleteEmployee(id);
         }
     };
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Gestión de Empleados
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Administra tu equipo de trabajo
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Gestión de Empleados
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Administra tu equipo de trabajo
+                        </p>
                     </div>
 
                     <Link
@@ -225,8 +235,8 @@ export default function EmployeesPage() {
                                         </div>
 
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${employee.status === 'active' ? 'bg-green-100 text-green-700' :
-                                                employee.status === 'vacation' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-red-100 text-red-700'
+                                            employee.status === 'vacation' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-red-100 text-red-700'
                                             }`}>
                                             {employee.status === 'active' ? 'Activo' :
                                                 employee.status === 'vacation' ? 'Vacaciones' : 'Inactivo'}
@@ -245,7 +255,7 @@ export default function EmployeesPage() {
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Calendar className="w-4 h-4" />
-                                            <span>Desde {employee.hireDate.toLocaleDateString('es-ES')}</span>
+                                            <span>Desde {new Date(employee.hireDate).toLocaleDateString('es-ES')}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                                             <DollarSign className="w-4 h-4" />
@@ -294,6 +304,6 @@ export default function EmployeesPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

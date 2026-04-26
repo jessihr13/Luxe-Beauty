@@ -1,25 +1,36 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { products } from '@/lib/data/products';
-import { getAllOrders } from '@/lib/data/orders';
+import { useOrdersStore } from '@/lib/orders/ordersStore';
+import { convertToLegacyOrders } from '@/lib/orders/orderAdapter';
 import { generateDemandForecast, identifyStockRisks } from '@/lib/analytics/demandPrediction';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, AlertTriangle, TrendingUp, Package } from 'lucide-react';
 import Link from 'next/link';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 const DemandForecastChart = dynamic(() => import('@/components/reports/DemandForecastChart'), { loading: () => <div className="h-96 w-full animate-pulse bg-gray-100 rounded-xl" /> });
 
 export default function DemandPredictionPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
 
-    // Hooks deben ir antes de cualquier return condicional
+    const getAllOrders = useOrdersStore(state => state.getAllOrders);
     const orders = getAllOrders();
 
-    const forecasts = useMemo(() => generateDemandForecast(products, orders, 3), [orders]);
+    useEffect(() => {
+        setMounted(true);
+        useOrdersStore.persist.rehydrate();
+    }, []);
+
+    // Convert to legacy format for analytics
+    const legacyOrders = useMemo(() => convertToLegacyOrders(orders), [orders]);
+
+    const forecasts = useMemo(() => generateDemandForecast(products, legacyOrders, 3), [legacyOrders]);
 
     const currentStock = useMemo(() => {
         const stockMap = new Map<string, number>();
@@ -39,13 +50,13 @@ export default function DemandPredictionPage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link
-                            href="/admin/dashboard"
+                            href="/admin/reportes"
                             className="text-gray-600 hover:text-gray-900 transition-colors"
                         >
                             <ArrowLeft className="w-6 h-6" />
@@ -159,6 +170,6 @@ export default function DemandPredictionPage() {
                     </ul>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

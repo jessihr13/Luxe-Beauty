@@ -3,6 +3,7 @@ import { Inter, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ToastProvider } from '@/lib/hooks/useToast';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const cormorant = Cormorant_Garamond({
@@ -32,7 +33,9 @@ export default function RootLayout({
             <body className={`${inter.variable} ${cormorant.variable} transition-colors duration-300 dark:bg-luxe-dark-900 dark:text-gray-100`}>
                 <AuthProvider>
                     <ThemeProvider>
-                        {children}
+                        <ToastProvider>
+                            {children}
+                        </ToastProvider>
                     </ThemeProvider>
                 </AuthProvider>
             </body>

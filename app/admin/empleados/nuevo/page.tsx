@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useToast } from '@/lib/hooks/useToast';
+import { LoadingButton } from '@/components/ui/LoadingSpinner';
 import type { EmployeeRole } from '@/lib/data/employees';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function NewEmployeePage() {
     const router = useRouter();
@@ -65,7 +68,7 @@ export default function NewEmployeePage() {
     };
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -322,6 +325,6 @@ export default function NewEmployeePage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

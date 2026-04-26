@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ExpenseCategory } from '@/lib/data/expenses';
 import { ArrowLeft, Save } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function NewExpensePage() {
     const router = useRouter();
@@ -47,7 +48,7 @@ export default function NewExpensePage() {
     };
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -213,6 +214,6 @@ export default function NewExpensePage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

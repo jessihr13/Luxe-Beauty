@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,28 +13,49 @@ import {
     TrendingDown
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getAllMovements, movementTypeInfo, type MovementType } from '@/lib/data/inventory';
+import { useInventoryStore, movementTypeInfo, type MovementType } from '@/lib/inventory/inventoryStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { staggerContainer } from '@/lib/animations';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function InventoryMovementsPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<MovementType | 'all'>('all');
+
+    const getAllMovements = useInventoryStore(state => state.getAllMovements);
+    const movements = getAllMovements();
+
+    useEffect(() => {
+        setMounted(true);
+        useInventoryStore.persist.rehydrate();
+    }, []);
 
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
     }
 
-    const movements = getAllMovements();
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
+    }
 
     // Filter movements
     const filteredMovements = movements.filter(movement => {
         const matchesSearch =
             movement.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             movement.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            movement.userName.toLowerCase().includes(searchTerm.toLowerCase());
+            movement.createdBy.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesType = filterType === 'all' || movement.type === filterType;
 
@@ -47,16 +68,10 @@ export default function InventoryMovementsPage() {
     const totalAdjustments = movements.filter(m => m.type === 'adjustment').length;
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center gap-4">
-                    <Link
-                        href="/admin/inventario"
-                        className="text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </Link>
                     <div>
                         <h1 className="text-4xl font-serif font-bold gradient-text">
                             Movimientos de Inventario
@@ -183,7 +198,7 @@ export default function InventoryMovementsPage() {
                                     return (
                                         <tr key={movement.id} className="border-b border-gray-100 hover:bg-gray-50">
                                             <td className="py-3 px-4 text-sm text-gray-600">
-                                                {movement.date.toLocaleDateString('es-ES', {
+                                                {new Date(movement.date).toLocaleDateString('es-ES', {
                                                     day: '2-digit',
                                                     month: 'short',
                                                     year: 'numeric'
@@ -194,16 +209,16 @@ export default function InventoryMovementsPage() {
                                             </td>
                                             <td className="text-center py-3 px-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${movement.type === 'in' ? 'bg-green-100 text-green-700' :
-                                                        movement.type === 'out' ? 'bg-red-100 text-red-700' :
-                                                            'bg-yellow-100 text-yellow-700'
+                                                    movement.type === 'out' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'
                                                     }`}>
                                                     {typeInfo.icon} {typeInfo.name}
                                                 </span>
                                             </td>
                                             <td className="text-center py-3 px-4">
                                                 <span className={`font-semibold ${movement.type === 'in' ? 'text-green-600' :
-                                                        movement.type === 'out' ? 'text-red-600' :
-                                                            'text-yellow-600'
+                                                    movement.type === 'out' ? 'text-red-600' :
+                                                        'text-yellow-600'
                                                     }`}>
                                                     {movement.type === 'in' ? '+' : movement.type === 'out' ? '-' : ''}
                                                     {movement.quantity}
@@ -217,12 +232,9 @@ export default function InventoryMovementsPage() {
                                             </td>
                                             <td className="py-3 px-4">
                                                 <p className="text-sm text-gray-700">{movement.reason}</p>
-                                                {movement.notes && (
-                                                    <p className="text-xs text-gray-500 mt-1">{movement.notes}</p>
-                                                )}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
-                                                {movement.userName}
+                                                {movement.createdBy}
                                             </td>
                                         </tr>
                                     );
@@ -248,6 +260,6 @@ export default function InventoryMovementsPage() {
                     </p>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

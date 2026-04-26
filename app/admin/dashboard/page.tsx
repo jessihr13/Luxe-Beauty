@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { products } from '@/lib/data/products';
+import { useProductsStore } from '@/lib/products/productsStore';
+import { useOrdersStore } from '@/lib/orders/ordersStore';
+import { useExpensesStore } from '@/lib/finances/expensesStore';
 import { LogOut, LayoutDashboard, Package, ShoppingCart, Users, DollarSign, Megaphone, BarChart3, Settings, Edit2, Check, RotateCcw, Smartphone, Monitor } from 'lucide-react';
 import { useDashboardStore } from '@/lib/store/useDashboardStore';
-import { useThemeStore, themeColors } from '@/lib/store/useThemeStore';
+import { useThemeStore } from '@/lib/store/useThemeStore';
 import WidgetSelector from '@/components/dashboard/WidgetSelector';
 import ThemeSelector from '@/components/dashboard/ThemeSelector';
+import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import dynamic from 'next/dynamic';
 
 const DashboardGrid = dynamic(() => import('@/components/dashboard/DashboardGrid'), {
@@ -21,12 +24,23 @@ export default function AdminDashboard() {
     const router = useRouter();
     const { user, logout, isAdmin, isAuthenticated, loading } = useAuth();
     const { isEditMode, toggleEditMode, resetLayout, currentDevice, setDevice } = useDashboardStore();
-    const { mode, primaryColor } = useThemeStore();
+    const { mode } = useThemeStore();
     const [mounted, setMounted] = useState(false);
+
+    const getAllProducts = useProductsStore(state => state.getAllProducts);
+    const getAllOrders = useOrdersStore(state => state.getAllOrders);
+    const getTotalExpenses = useExpensesStore(state => state.getTotalExpenses);
+    const getTotalByCategory = useExpensesStore(state => state.getTotalExpensesByCategory);
+
+    const products = getAllProducts();
+    const orders = getAllOrders();
 
     // Prevent hydration mismatch
     useEffect(() => {
         setMounted(true);
+        useProductsStore.persist.rehydrate();
+        useOrdersStore.persist.rehydrate();
+        useExpensesStore.persist.rehydrate();
     }, []);
 
     if (loading) {
@@ -47,31 +61,31 @@ export default function AdminDashboard() {
 
     // Calculate financial metrics
     const calculateMetrics = () => {
-        let totalRevenue = 0;
-        let totalCost = 0;
-        let totalOrders = 0;
+        // Calculate from real orders
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const totalOrders = orders.length;
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-        products.forEach(p => {
-            const sales = p.neuromarketing.socialProof.purchaseCount;
-            totalRevenue += p.price * sales;
-            totalCost += (p.cost || 0) * sales;
-            totalOrders += sales;
+        // Calculate costs from products
+        let totalCost = 0;
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product?.cost) {
+                    totalCost += product.cost * item.quantity;
+                }
+            });
         });
 
         const grossProfit = totalRevenue - totalCost;
-        const grossMargin = (grossProfit / totalRevenue) * 100;
+        const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-        // Mock operational expenses
-        const expenses = {
-            logistics: 15000,
-            marketing: 25000,
-            salaries: 30000,
-            general: 8000,
-        };
+        // Get real expenses
+        const totalExpenses = getTotalExpenses();
+        const expensesByCategory = getTotalByCategory();
 
-        const totalExpenses = Object.values(expenses).reduce((a, b) => a + b, 0);
         const netProfit = grossProfit - totalExpenses;
-        const netMargin = (netProfit / totalRevenue) * 100;
+        const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
         return {
             totalRevenue,
@@ -82,8 +96,8 @@ export default function AdminDashboard() {
             netProfit,
             netMargin,
             totalOrders,
-            avgOrderValue: totalRevenue / totalOrders,
-            expenses,
+            avgOrderValue,
+            expenses: expensesByCategory,
         };
     };
 
@@ -126,7 +140,7 @@ export default function AdminDashboard() {
     if (!mounted) return null;
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${themeColors[primaryColor].light} dark:bg-luxe-dark-900`}>
+        <div className="min-h-screen transition-colors duration-300 bg-nude-50 dark:bg-luxe-dark-900">
             {/* Header */}
             <header className="bg-white dark:bg-luxe-dark-800 shadow-sm sticky top-0 z-20 transition-colors duration-300 border-b dark:border-luxe-dark-700">
                 <div className="container mx-auto px-6 py-4">
@@ -152,7 +166,7 @@ export default function AdminDashboard() {
                             </Link>
                             <button
                                 onClick={handleLogout}
-                                className={`flex items-center gap-2 px-4 py-2 ${themeColors[primaryColor].primary} text-white rounded-full hover:opacity-90 transition-opacity`}
+                                className="flex items-center gap-2 px-4 py-2 bg-rose-gold-600 text-white rounded-full hover:opacity-90 transition-opacity"
                             >
                                 <LogOut className="w-4 h-4" />
                                 <span className="hidden md:inline">Cerrar Sesión</span>
@@ -164,95 +178,8 @@ export default function AdminDashboard() {
 
             <div className="container mx-auto px-6 py-8">
                 <div className="flex gap-8">
-                    {/* Sidebar */}
-                    <aside className="w-64 flex-shrink-0 hidden lg:block">
-                        <nav className="card-luxury p-4 sticky top-24 dark:bg-luxe-dark-800 dark:border-luxe-dark-700">
-                            <ul className="space-y-2">
-                                <li>
-                                    <Link
-                                        href="/admin/dashboard"
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg ${themeColors[primaryColor].light} ${themeColors[primaryColor].text}`}
-                                    >
-                                        <LayoutDashboard className="w-5 h-5" />
-                                        <span className="font-medium">Dashboard</span>
-                                    </Link>
-                                </li>
-                                {/* Other links would use dynamic colors too, but keeping simple for now */}
-                                <li>
-                                    <Link
-                                        href="/admin/productos"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <Package className="w-5 h-5" />
-                                        <span className="font-medium">Productos</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/inventario"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <Package className="w-5 h-5" />
-                                        <span className="font-medium">Inventario</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/pedidos"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <ShoppingCart className="w-5 h-5" />
-                                        <span className="font-medium">Pedidos</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/empleados"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <Users className="w-5 h-5" />
-                                        <span className="font-medium">Empleados</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/finanzas/gastos"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <DollarSign className="w-5 h-5" />
-                                        <span className="font-medium">Finanzas</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/marketing"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <Megaphone className="w-5 h-5" />
-                                        <span className="font-medium">Marketing</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/reportes"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <BarChart3 className="w-5 h-5" />
-                                        <span className="font-medium">Reportes</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/admin/configuracion"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                    >
-                                        <Settings className="w-5 h-5" />
-                                        <span className="font-medium">Configuración</span>
-                                    </Link>
-                                </li>
-                            </ul>
-                        </nav>
-                    </aside>
+                    {/* Sidebar with hover dropdowns */}
+                    <DashboardSidebar />
 
                     {/* Main Content */}
                     <main className="flex-1 min-w-0">
@@ -300,7 +227,7 @@ export default function AdminDashboard() {
                                 ) : (
                                     <button
                                         onClick={toggleEditMode}
-                                        className={`flex items-center gap-2 px-4 py-2 ${themeColors[primaryColor].primary} text-white rounded-lg hover:opacity-90 transition-opacity`}
+                                        className="flex items-center gap-2 px-4 py-2 bg-rose-gold-600 text-white rounded-lg hover:opacity-90 transition-opacity"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                         Personalizar

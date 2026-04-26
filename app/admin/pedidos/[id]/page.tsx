@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     ArrowLeft,
     Package,
@@ -18,17 +19,30 @@ import {
     XCircle
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getOrderById, updateOrderStatus, orderStatusInfo, courierInfo, type OrderStatus, type CourierType } from '@/lib/data/orders';
-import { generateShippingLabel, generatePackingSlip } from '@/lib/pdf/shippingLabel';
+import { useOrdersStore, type Order } from '@/lib/orders/ordersStore';
+import { useToast } from '@/lib/hooks/useToast';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function OrderDetailPage() {
     const router = useRouter();
     const params = useParams();
     const { isAdmin, isAuthenticated } = useAuth();
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<Order | null>(null);
     const [updating, setUpdating] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    
+    const getOrderById = useOrdersStore(state => state.getOrderById);
+    const updateOrderStatus = useOrdersStore(state => state.updateOrderStatus);
+    const toast = useToast();
 
     useEffect(() => {
+        setMounted(true);
+        useOrdersStore.persist.rehydrate();
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+
         if (!isAuthenticated || !isAdmin) {
             router.push('/login');
             return;
@@ -41,39 +55,38 @@ export default function OrderDetailPage() {
         } else {
             router.push('/admin/pedidos');
         }
-    }, [params.id, isAuthenticated, isAdmin, router]);
+    }, [params.id, isAuthenticated, isAdmin, router, getOrderById, mounted]);
 
-    const handleStatusChange = (newStatus: OrderStatus) => {
+    const handleStatusChange = (newStatus: Order['status']) => {
         if (!order) return;
 
         setUpdating(true);
-        const updated = updateOrderStatus(order.id, newStatus);
-        if (updated) {
-            setOrder(updated);
+        updateOrderStatus(order.id, newStatus);
+        const updatedOrder = getOrderById(order.id);
+        if (updatedOrder) {
+            setOrder(updatedOrder);
         }
         setTimeout(() => setUpdating(false), 500);
     };
 
-    const handleGenerateShippingLabel = () => {
-        if (order) {
-            generateShippingLabel(order);
-        }
-    };
-
-    const handleGeneratePackingSlip = () => {
-        if (order) {
-            generatePackingSlip(order);
-        }
-    };
-
-    if (!order) {
-        return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    if (!mounted || !order) {
+        return (
+            <AdminPageLayout>
+                <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+            </AdminPageLayout>
+        );
     }
 
-    const statusInfo = orderStatusInfo[order.status as OrderStatus];
+    const statusInfo = {
+        pending: { icon: '⏳', name: 'Pendiente' },
+        processing: { icon: '⚙️', name: 'Procesando' },
+        shipped: { icon: '📦', name: 'Enviado' },
+        delivered: { icon: '✅', name: 'Entregado' },
+        cancelled: { icon: '❌', name: 'Cancelado' }
+    }[order.status];
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -86,33 +99,16 @@ export default function OrderDetailPage() {
                         </Link>
                         <div>
                             <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Pedido {order.orderNumber}
+                                Pedido {order.id}
                             </h1>
                             <p className="text-gray-600 mt-2">
-                                Creado el {order.createdAt.toLocaleDateString('es-ES', {
+                                Creado el {new Date(order.createdAt).toLocaleDateString('es-ES', {
                                     day: 'numeric',
                                     month: 'long',
                                     year: 'numeric'
                                 })}
                             </p>
                         </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleGeneratePackingSlip}
-                            className="btn-secondary flex items-center gap-2"
-                        >
-                            <Download className="w-5 h-5" />
-                            Lista de Empaque
-                        </button>
-                        <button
-                            onClick={handleGenerateShippingLabel}
-                            className="btn-primary flex items-center gap-2"
-                        >
-                            <Download className="w-5 h-5" />
-                            Guía de Envío
-                        </button>
                     </div>
                 </div>
 
@@ -126,19 +122,30 @@ export default function OrderDetailPage() {
                                 Productos ({order.items.length})
                             </h3>
                             <div className="space-y-3">
-                                {order.items.map((item: any, index: number) => (
+                                {order.items.map((item, index) => (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                                                <Package className="w-6 h-6 text-gray-500" />
+                                            <div className="relative w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                                {item.image ? (
+                                                    <Image
+                                                        src={item.image}
+                                                        alt={item.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <Package className="w-6 h-6 text-gray-500" />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
-                                                <p className="font-medium text-gray-900">{item.productName}</p>
+                                                <p className="font-medium text-gray-900">{item.name}</p>
                                                 <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-semibold text-gray-900">${item.subtotal.toFixed(2)}</p>
+                                            <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
                                             <p className="text-sm text-gray-600">${item.price.toFixed(2)} c/u</p>
                                         </div>
                                     </div>
@@ -169,10 +176,12 @@ export default function OrderDetailPage() {
                                 Dirección de Envío
                             </h3>
                             <div className="space-y-2 text-gray-700">
-                                <p>{order.shippingAddress.street}</p>
-                                <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
-                                <p>C.P. {order.shippingAddress.zipCode}</p>
-                                <p>{order.shippingAddress.country}</p>
+                                <p>{order.shippingAddress}</p>
+                                {order.notes && (
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        <strong>Instrucciones:</strong> {order.notes}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -248,25 +257,6 @@ export default function OrderDetailPage() {
                             </div>
                         </div>
 
-                        {/* Tracking */}
-                        {order.trackingNumber && (
-                            <div className="card-luxury p-6">
-                                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                    <Truck className="w-5 h-5" />
-                                    Tracking
-                                </h3>
-                                <div className="space-y-2">
-                                    <p className="text-sm text-gray-600">Número de rastreo:</p>
-                                    <p className="font-mono font-semibold text-blue-600">{order.trackingNumber}</p>
-                                    {order.courier && (
-                                        <p className="text-sm text-gray-600">
-                                            Paquetería: {courierInfo[order.courier as CourierType].name}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
                         {/* Timeline */}
                         <div className="card-luxury p-6">
                             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -279,39 +269,17 @@ export default function OrderDetailPage() {
                                     <div>
                                         <p className="font-medium text-gray-900">Pedido creado</p>
                                         <p className="text-sm text-gray-600">
-                                            {order.createdAt.toLocaleString('es-ES')}
+                                            {new Date(order.createdAt).toLocaleString('es-ES')}
                                         </p>
                                     </div>
                                 </div>
-                                {order.processedAt && (
+                                {order.updatedAt !== order.createdAt && (
                                     <div className="flex items-start gap-3">
                                         <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                                         <div>
-                                            <p className="font-medium text-gray-900">Procesado</p>
+                                            <p className="font-medium text-gray-900">Última actualización</p>
                                             <p className="text-sm text-gray-600">
-                                                {order.processedAt.toLocaleString('es-ES')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {order.shippedAt && (
-                                    <div className="flex items-start gap-3">
-                                        <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5" />
-                                        <div>
-                                            <p className="font-medium text-gray-900">Enviado</p>
-                                            <p className="text-sm text-gray-600">
-                                                {order.shippedAt.toLocaleString('es-ES')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {order.deliveredAt && (
-                                    <div className="flex items-start gap-3">
-                                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                                        <div>
-                                            <p className="font-medium text-gray-900">Entregado</p>
-                                            <p className="text-sm text-gray-600">
-                                                {order.deliveredAt.toLocaleString('es-ES')}
+                                                {new Date(order.updatedAt || order.createdAt).toLocaleString('es-ES')}
                                             </p>
                                         </div>
                                     </div>
@@ -321,6 +289,6 @@ export default function OrderDetailPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

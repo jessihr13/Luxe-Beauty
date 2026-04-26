@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { products } from '@/lib/data/products';
+import { useProductsStore } from '@/lib/products/productsStore';
 import {
     calculateProductProfitability,
     getProfitabilityByCategory,
@@ -14,6 +14,9 @@ import {
 import dynamic from 'next/dynamic';
 import { ArrowLeft, DollarSign, TrendingUp, AlertCircle, Star } from 'lucide-react';
 import Link from 'next/link';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
+import { useToast } from '@/lib/hooks/useToast';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const ProfitabilityScatter = dynamic(() => import('@/components/reports/ProfitabilityScatter'), { loading: () => <div className="h-96 w-full animate-pulse bg-gray-100 rounded-xl" /> });
@@ -21,9 +24,18 @@ const ProfitabilityScatter = dynamic(() => import('@/components/reports/Profitab
 export default function ProfitabilityPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
+
+    const getAllProducts = useProductsStore(state => state.getAllProducts);
+    const products = getAllProducts();
+
+    useEffect(() => {
+        setMounted(true);
+        useProductsStore.persist.rehydrate();
+    }, []);
 
     // Hooks deben ir antes de cualquier return condicional
-    const profitability = useMemo(() => calculateProductProfitability(products), []);
+    const profitability = useMemo(() => calculateProductProfitability(products), [products]);
     const categoryData = useMemo(() => getProfitabilityByCategory(profitability), [profitability]);
     const lowPerformers = useMemo(() => identifyLowPerformers(profitability), [profitability]);
     const starProducts = useMemo(() => identifyStarProducts(profitability), [profitability]);
@@ -34,8 +46,18 @@ export default function ProfitabilityPage() {
         return null;
     }
 
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -250,6 +272,6 @@ export default function ProfitabilityPage() {
                     </ul>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

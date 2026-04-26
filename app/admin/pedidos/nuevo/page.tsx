@@ -9,6 +9,7 @@ import { createOrder } from '@/lib/data/orders';
 import { getAllCampaigns, attributionSources } from '@/lib/data/campaigns';
 import { products } from '@/lib/data/products';
 import { attributeSaleToCampaign } from '@/lib/data/campaigns';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function NewOrderPage() {
     const router = useRouter();
@@ -161,7 +162,7 @@ export default function NewOrderPage() {
     const { subtotal, total } = calculateTotals();
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center gap-4">
@@ -495,6 +496,6 @@ export default function NewOrderPage() {
                     </div>
                 </form>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

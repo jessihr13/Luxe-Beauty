@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createCampaign, type CampaignType, type CampaignStatus } from '@/lib/data/campaigns';
 
@@ -82,7 +83,7 @@ export default function NewCampaignPage() {
     };
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center gap-4">
@@ -347,6 +348,6 @@ export default function NewCampaignPage() {
                     </div>
                 </form>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

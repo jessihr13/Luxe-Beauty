@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getAllOrders } from '@/lib/data/orders';
+import { useOrdersStore } from '@/lib/orders/ordersStore';
+import { convertToLegacyOrders } from '@/lib/orders/orderAdapter';
 import { generateCohortAnalysis, calculateChurnRate, calculateAverageLTV } from '@/lib/analytics/cohortAnalysis';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Users, TrendingDown, DollarSign } from 'lucide-react';
 import Link from 'next/link';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 const CohortRetentionChart = dynamic(() => import('@/components/reports/CohortRetentionChart'), { loading: () => <div className="h-96 w-full animate-pulse bg-gray-100 rounded-xl" /> });
 const CohortHeatmap = dynamic(() => import('@/components/reports/CohortHeatmap'), { loading: () => <div className="h-96 w-full animate-pulse bg-gray-100 rounded-xl" /> });
@@ -15,18 +17,27 @@ const CohortHeatmap = dynamic(() => import('@/components/reports/CohortHeatmap')
 export default function CohortAnalysisPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
 
-    // Hooks deben ir antes de cualquier return condicional
+    const getAllOrders = useOrdersStore(state => state.getAllOrders);
     const orders = getAllOrders();
 
-    const cohortData = useMemo(() => generateCohortAnalysis(orders), [orders]);
+    useEffect(() => {
+        setMounted(true);
+        useOrdersStore.persist.rehydrate();
+    }, []);
+
+    // Convert to legacy format for analytics
+    const legacyOrders = useMemo(() => convertToLegacyOrders(orders), [orders]);
+
+    const cohortData = useMemo(() => generateCohortAnalysis(legacyOrders), [legacyOrders]);
     const churnRate = useMemo(() => calculateChurnRate(cohortData), [cohortData]);
     const avgLTV = useMemo(() => calculateAverageLTV(cohortData), [cohortData]);
 
     const totalCustomers = useMemo(() => {
-        const uniqueCustomers = new Set(orders.map(o => o.customerEmail));
+        const uniqueCustomers = new Set(legacyOrders.map(o => o.customerEmail));
         return uniqueCustomers.size;
-    }, [orders]);
+    }, [legacyOrders]);
 
     // Redirect si no es admin
     if (!isAuthenticated || !isAdmin) {
@@ -35,13 +46,13 @@ export default function CohortAnalysisPage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link
-                            href="/admin/dashboard"
+                            href="/admin/reportes"
                             className="text-gray-600 hover:text-gray-900 transition-colors"
                         >
                             <ArrowLeft className="w-6 h-6" />
@@ -113,6 +124,6 @@ export default function CohortAnalysisPage() {
                     </ul>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

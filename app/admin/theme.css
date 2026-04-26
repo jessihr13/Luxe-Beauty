@@ -1,0 +1,195 @@
+/* Global CSS Variables for Theme System */
+:root {
+    /* Default theme colors (Rose Gold) */
+    --color-primary: #D4AF37;
+    --color-secondary: #C9A0DC;
+    --color-accent: #E8B4B8;
+    --color-background: #FFF8F0;
+
+    /* Typography */
+    --font-family-base: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-size-base: 100%;
+
+    /* Spacing */
+    --spacing-multiplier: 1;
+
+    /* Border radius */
+    --border-radius-base: 0.5rem;
+
+    /* Transitions */
+    --transition-duration: 300ms;
+}
+
+/* Override Tailwind rose-gold colors with CSS variables in admin */
+.admin-themed {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+}
+
+/* Primary color overrides with gradient effect and improved text contrast */
+.admin-themed .bg-rose-gold-600,
+.admin-themed .bg-rose-gold-500 {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all var(--transition-duration);
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.admin-themed .bg-rose-gold-600:hover,
+.admin-themed .bg-rose-gold-500:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.admin-themed .text-rose-gold-600,
+.admin-themed .text-rose-gold-500 {
+    color: var(--color-primary) !important;
+}
+
+.admin-themed .border-rose-gold-500,
+.admin-themed .border-rose-gold-600 {
+    border-color: var(--color-primary) !important;
+}
+
+.admin-themed .bg-rose-gold-50 {
+    background: linear-gradient(135deg, var(--color-background) 0%, rgba(255, 255, 255, 0.8) 100%) !important;
+}
+
+.admin-themed .hover\:bg-rose-gold-700:hover {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+    filter: brightness(0.9);
+    transform: translateY(-2px);
+}
+
+.admin-themed .hover\:bg-rose-gold-100:hover {
+    background-color: var(--color-background) !important;
+    filter: brightness(0.95);
+}
+
+.admin-themed .ring-rose-gold-300 {
+    --tw-ring-color: var(--color-primary);
+    --tw-ring-opacity: 0.5;
+}
+
+.admin-themed .peer-checked\:bg-rose-gold-600:checked {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+}
+
+/* Gradient text using primary color */
+.admin-themed .gradient-text {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card luxury with theme background and subtle gradient */
+.admin-themed .card-luxury {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border-radius: var(--border-radius-base);
+    transition: all var(--transition-duration);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.admin-themed .card-luxury:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* All buttons with gradient effect and white text */
+.admin-themed button:not(.btn-ghost):not([class*="border-2"]) {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    transition: all var(--transition-duration);
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.admin-themed button:not(.btn-ghost):not([class*="border-2"]):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Specific button styles with gradients */
+.admin-themed .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    border-radius: var(--border-radius-base);
+    transition: all var(--transition-duration);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-themed .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.admin-themed .btn-secondary {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%) !important;
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    border-radius: var(--border-radius-base);
+    transition: all var(--transition-duration);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-themed .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Links styled as buttons */
+.admin-themed a[class*="bg-rose-gold"],
+.admin-themed a[class*="btn-"] {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+    transition: all var(--transition-duration);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.admin-themed a[class*="bg-rose-gold"]:hover,
+.admin-themed a[class*="btn-"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Apply transitions globally */
+.admin-themed * {
+    transition-duration: var(--transition-duration);
+}
+
+/* Spacing utilities with density multiplier */
+.admin-themed .themed-p-4 {
+    padding: calc(1rem * var(--spacing-multiplier));
+}
+
+.admin-themed .themed-m-4 {
+    margin: calc(1rem * var(--spacing-multiplier));
+}
+
+.admin-themed .themed-gap-4 {
+    gap: calc(1rem * var(--spacing-multiplier));
+}
+
+/* Background color for admin pages with subtle gradient */
+.admin-themed .bg-nude-50 {
+    background: linear-gradient(135deg, var(--color-background) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+}
+
+/* Icon containers with gradient */
+.admin-themed [class*="bg-gradient-to-br"] {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+}
+
+/* Toggle switches with gradient when checked */
+.admin-themed input[type="checkbox"]:checked+div {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%) !important;
+}
+
+/* Selected state for buttons with gradient */
+.admin-themed .border-rose-gold-500.bg-rose-gold-50 {
+    background: linear-gradient(135deg, var(--color-background) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}

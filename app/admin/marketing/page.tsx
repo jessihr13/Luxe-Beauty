@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -19,30 +19,43 @@ import {
     Play
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import {
-    getAllCampaigns,
-    calculateCampaignROI,
-    calculateCampaignRevenue,
-    campaignTypeInfo,
-    campaignStatusInfo,
-    type CampaignType,
-    type CampaignStatus
-} from '@/lib/data/campaigns';
+import { useCampaignsStore, campaignTypeInfo, campaignStatusInfo, type CampaignType, type CampaignStatus } from '@/lib/marketing/campaignsStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { staggerContainer } from '@/lib/animations';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function MarketingPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<CampaignType | 'all'>('all');
     const [filterStatus, setFilterStatus] = useState<CampaignStatus | 'all'>('all');
+
+    const getAllCampaigns = useCampaignsStore(state => state.getAllCampaigns);
+    const campaigns = getAllCampaigns();
+
+    useEffect(() => {
+        setMounted(true);
+        useCampaignsStore.persist.rehydrate();
+    }, []);
 
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
     }
 
-    const campaigns = getAllCampaigns();
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
+    }
 
     // Filter campaigns
     const filteredCampaigns = campaigns.filter(campaign => {
@@ -56,32 +69,27 @@ export default function MarketingPage() {
     // Calculate metrics
     const totalBudget = campaigns.reduce((sum, c) => sum + c.budget, 0);
     const totalSpent = campaigns.reduce((sum, c) => sum + c.spent, 0);
-    const totalRevenue = campaigns.reduce((sum, c) => sum + calculateCampaignRevenue(c.id), 0);
+    const totalRevenue = campaigns.reduce((sum, c) => sum + (c.metrics.revenue || 0), 0);
     const avgROI = campaigns.length > 0
-        ? campaigns.reduce((sum, c) => sum + calculateCampaignROI(c.id), 0) / campaigns.length
+        ? campaigns.reduce((sum, c) => {
+            const roi = c.spent > 0 ? (((c.metrics.revenue || 0) - c.spent) / c.spent) * 100 : 0;
+            return sum + roi;
+        }, 0) / campaigns.length
         : 0;
     const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Marketing y Campañas
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Gestión de campañas y análisis de ROI
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Marketing y Campañas
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Gestión de campañas y análisis de ROI
+                        </p>
                     </div>
 
                     <Link
@@ -214,8 +222,8 @@ export default function MarketingPage() {
                     {filteredCampaigns.map(campaign => {
                         const typeInfo = campaignTypeInfo[campaign.type];
                         const statusInfo = campaignStatusInfo[campaign.status];
-                        const roi = calculateCampaignROI(campaign.id);
-                        const revenue = calculateCampaignRevenue(campaign.id);
+                        const revenue = campaign.metrics.revenue || 0;
+                        const roi = campaign.spent > 0 ? ((revenue - campaign.spent) / campaign.spent) * 100 : 0;
                         const budgetProgress = (campaign.spent / campaign.budget) * 100;
 
                         return (
@@ -235,9 +243,9 @@ export default function MarketingPage() {
                                         </div>
                                     </div>
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${campaign.status === 'active' ? 'bg-green-100 text-green-700' :
-                                            campaign.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                                                campaign.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-gray-100 text-gray-700'
+                                        campaign.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                            campaign.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-700'
                                         }`}>
                                         {statusInfo.icon} {statusInfo.name}
                                     </span>
@@ -259,8 +267,8 @@ export default function MarketingPage() {
                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div
                                             className={`h-2 rounded-full ${budgetProgress > 90 ? 'bg-red-500' :
-                                                    budgetProgress > 70 ? 'bg-yellow-500' :
-                                                        'bg-green-500'
+                                                budgetProgress > 70 ? 'bg-yellow-500' :
+                                                    'bg-green-500'
                                                 }`}
                                             style={{ width: `${Math.min(budgetProgress, 100)}%` }}
                                         />
@@ -316,6 +324,6 @@ export default function MarketingPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

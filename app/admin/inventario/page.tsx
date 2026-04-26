@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -16,22 +16,47 @@ import {
     ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { products } from '@/lib/data/products';
-import { getStockAlerts, getAllMovements } from '@/lib/data/inventory';
+import { useProductsStore } from '@/lib/products/productsStore';
+import { useInventoryStore } from '@/lib/inventory/inventoryStore';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { staggerContainer } from '@/lib/animations';
 import { exportProductsToExcel, exportToCSV } from '@/lib/utils/export-utils';
 import { exportInventoryToPDF } from '@/lib/utils/pdf-utils';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function InventoryPage() {
     const router = useRouter();
     const { isAdmin, isAuthenticated } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'critical' | 'low' | 'ok'>('all');
     const [showExportMenu, setShowExportMenu] = useState(false);
 
+    const getAllProducts = useProductsStore(state => state.getAllProducts);
+    const getStockAlerts = useInventoryStore(state => state.getStockAlerts);
+    const getAllMovements = useInventoryStore(state => state.getAllMovements);
+    
+    const products = getAllProducts();
+
+    useEffect(() => {
+        setMounted(true);
+        useProductsStore.persist.rehydrate();
+        useInventoryStore.persist.rehydrate();
+    }, []);
+
     if (!isAuthenticated || !isAdmin) {
         router.push('/login');
         return null;
+    }
+
+    if (!mounted) {
+        return (
+            <AdminPageLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold-600"></div>
+                </div>
+            </AdminPageLayout>
+        );
     }
 
     // Get stock alerts
@@ -54,34 +79,25 @@ export default function InventoryPage() {
 
     // Calculate metrics
     const totalProducts = products.length;
-    const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
+    const totalStock = products.reduce((acc, product) => acc + product.stock, 0);
     const criticalAlerts = alerts.filter(a => a.status === 'critical').length;
     const lowStockAlerts = alerts.filter(a => a.status === 'low').length;
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Gestión de Inventario
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Control de stock y movimientos
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Inventario
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Gestión de stock y movimientos
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {/* Export Dropdown */}
+                    <div className="flex gap-3">
                         <div className="relative">
                             <button
                                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -93,7 +109,7 @@ export default function InventoryPage() {
                             </button>
 
                             {showExportMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                                     <button
                                         onClick={() => {
                                             exportProductsToExcel(products);
@@ -106,16 +122,7 @@ export default function InventoryPage() {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            const csvData = products.map(p => ({
-                                                SKU: p.id,
-                                                Nombre: p.name,
-                                                Categoría: p.category,
-                                                Precio: p.price,
-                                                Costo: p.cost || 0,
-                                                Stock: p.stock,
-                                                Ventas: p.neuromarketing.socialProof.purchaseCount,
-                                            }));
-                                            exportToCSV(csvData, 'inventario');
+                                            exportToCSV(products, 'inventario');
                                             setShowExportMenu(false);
                                         }}
                                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
@@ -393,6 +400,6 @@ export default function InventoryPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

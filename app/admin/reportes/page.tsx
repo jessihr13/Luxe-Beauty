@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, Users, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function ReportesPage() {
     const router = useRouter();
@@ -58,25 +59,17 @@ export default function ReportesPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/admin/dashboard"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div>
-                            <h1 className="text-4xl font-serif font-bold gradient-text">
-                                Reportes Avanzados
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                Análisis y predicciones para toma de decisiones
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold gradient-text">
+                            Reportes Avanzados
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                            Análisis y predicciones para toma de decisiones
+                        </p>
                     </div>
                 </div>
 
@@ -157,6 +150,6 @@ export default function ReportesPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

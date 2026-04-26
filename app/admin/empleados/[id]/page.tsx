@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { getEmployeeById } from '@/lib/data/employees';
 import type { Employee, EmployeeRole } from '@/lib/data/employees';
 import { ArrowLeft, Save } from 'lucide-react';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function EditEmployeePage() {
     const router = useRouter();
@@ -64,7 +65,7 @@ export default function EditEmployeePage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -316,6 +317,6 @@ export default function EditEmployeePage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

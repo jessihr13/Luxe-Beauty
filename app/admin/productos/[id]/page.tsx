@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getProductById, updateProduct } from '@/lib/data/productManager';
+import { useProductsStore } from '@/lib/products/productsStore';
+import { useToast } from '@/lib/hooks/useToast';
 import { Product } from '@/lib/data/products';
 import { ArrowLeft, Save } from 'lucide-react';
+import { LoadingButton } from '@/components/ui/LoadingSpinner';
+import AdminPageLayout from '@/components/admin/AdminPageLayout';
 
 export default function EditProductPage() {
     const router = useRouter();
@@ -16,11 +19,17 @@ export default function EditProductPage() {
     const [formData, setFormData] = useState<Partial<Product>>({});
     const [saving, setSaving] = useState(false);
 
+    const getProductById = useProductsStore(state => state.getProductById);
+    const updateProductStore = useProductsStore(state => state.updateProduct);
+    const toast = useToast();
+
     useEffect(() => {
         if (!isAuthenticated || !isAdmin) {
             router.push('/login');
             return;
         }
+
+        useProductsStore.persist.rehydrate();
 
         const id = params.id as string;
         const foundProduct = getProductById(id);
@@ -30,7 +39,7 @@ export default function EditProductPage() {
         } else {
             router.push('/admin/productos');
         }
-    }, [params.id, isAuthenticated, isAdmin, router]);
+    }, [params.id, isAuthenticated, isAdmin, router, getProductById]);
 
     const handleChange = (field: keyof Product, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -40,16 +49,18 @@ export default function EditProductPage() {
         if (!product) return;
 
         setSaving(true);
-        const updated = updateProduct(product.id, formData);
-
-        if (updated) {
+        
+        try {
+            updateProductStore(product.id, formData);
+            
             setTimeout(() => {
                 setSaving(false);
+                toast.success(`✅ Producto "${product.name}" actualizado exitosamente`);
                 router.push('/admin/productos');
             }, 500);
-        } else {
+        } catch (error) {
             setSaving(false);
-            alert('Error al guardar');
+            toast.error('❌ Error al actualizar el producto');
         }
     };
 
@@ -58,7 +69,7 @@ export default function EditProductPage() {
     }
 
     return (
-        <div className="min-h-screen bg-nude-50 p-8">
+        <AdminPageLayout>
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -272,6 +283,6 @@ export default function EditProductPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }
