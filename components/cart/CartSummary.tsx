@@ -6,13 +6,15 @@ import { Truck, Tag, Star, Percent } from 'lucide-react';
 
 export default function CartSummary() {
     const {
-        subtotal,
-        discounts,
-        shipping,
-        total,
-        pointsToEarn,
-        hasFreeShipping,
+        getSubtotal,
+        getDiscountTotal,
+        getFinalTotal
     } = useCartStore();
+    
+    const subtotal = getSubtotal();
+    const discounts = getDiscountTotal();
+    const total = getFinalTotal();
+    const shipping = 0;
 
     const totalDiscounts = Object.values(discounts).reduce((sum, d) => sum + d, 0);
 
