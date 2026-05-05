@@ -12,7 +12,7 @@ interface CartItemProps {
 }
 
 export default function CartItem({ item }: CartItemProps) {
-    const { updateQuantity, removeItem } = useCartStore();
+    const { updateQuantity, removeFromCart } = useCartStore();
     const { product, quantity } = item;
 
     const itemTotal = product.price * quantity;
@@ -42,7 +42,7 @@ export default function CartItem({ item }: CartItemProps) {
                             {product.name}
                         </h3>
                         <button
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => removeFromCart(item.id)}
                             className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
                             aria-label="Eliminar del carrito"
                         >
