@@ -40,25 +40,26 @@ export default function ExecutiveDashboardPage() {
     // KPIs principales
     const kpis = useMemo(() => {
         const totalCustomers = new Set(
-        const totalCustomers = new Set(orders.map(o => o.customer.email)).size;
+        orders.map(o => o.customer?.email ?? "")
+        ).size;
+    
         const totalOrders = orders.length;
         const avgOrderValue = profitMetrics.totalRevenue / totalOrders;
         const productsInStock = products.filter(p => p.stock > 0).length;
         const lowStockProducts = products.filter(p => p.stock > 0 && p.stock <= 10).length;
-
+    
         return {
-            totalRevenue: profitMetrics.totalRevenue,
-            totalProfit: profitMetrics.totalProfit,
-            profitMargin: profitMetrics.avgMargin,
-            totalCustomers,
-            avgLTV,
-            totalOrders,
-            avgOrderValue,
-            productsInStock,
-            lowStockProducts,
-            totalProducts: products.length,
+        totalRevenue: profitMetrics.totalRevenue,
+        totalProfit: profitMetrics.totalProfit,
+        profitMargin: profitMetrics.avgMargin,
+        totalCustomers,
+        avgLTV,
+        totalOrders,
+        avgOrderValue,
+        productsInStock,
+        lowStockProducts,
         };
-    }, [profitMetrics, avgLTV, orders]);
+    }, [orders, products, profitMetrics, avgLTV]);
 
     // Datos para gráficos
     const salesTrendData = useMemo(() => {
