@@ -40,7 +40,7 @@ export default function ExecutiveDashboardPage() {
     // KPIs principales
     const kpis = useMemo(() => {
         const totalCustomers = new Set(
-        orders.map(o => o.customer?.email ?? "")
+        orders.map(o => o.cliente?.correo ?? "")
         ).size;
     
         const totalOrders = orders.length;
