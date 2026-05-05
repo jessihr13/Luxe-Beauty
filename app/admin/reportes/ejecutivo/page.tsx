@@ -47,6 +47,7 @@ export default function ExecutiveDashboardPage() {
         const avgOrderValue = profitMetrics.totalRevenue / totalOrders;
         const productsInStock = products.filter(p => p.stock > 0).length;
         const lowStockProducts = products.filter(p => p.stock > 0 && p.stock <= 10).length;
+        const totalProducts = products.length;
     
         return {
         totalRevenue: profitMetrics.totalRevenue,
@@ -58,6 +59,7 @@ export default function ExecutiveDashboardPage() {
         avgOrderValue,
         productsInStock,
         lowStockProducts,
+        totalProducts,
         };
     }, [orders, profitMetrics, avgLTV, products]);
 
