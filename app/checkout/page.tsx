@@ -294,7 +294,7 @@ export default function CheckoutPage() {
 
                                 <LoadingButton
                                     type="submit"
-                                    isLoading={isProcessing}
+                                    loading={isProcessing}
                                     className="w-full mt-6 bg-rose-gold-600 text-white py-3 rounded-lg hover:bg-rose-gold-700 transition-colors font-semibold"
                                 >
                                     Finalizar Compra
