@@ -59,7 +59,7 @@ export default function ExecutiveDashboardPage() {
         productsInStock,
         lowStockProducts,
         };
-    }, [orders, products, profitMetrics, avgLTV]);
+    }, [orders, profitMetrics, avgLTV];
 
     // Datos para gráficos
     const salesTrendData = useMemo(() => {
