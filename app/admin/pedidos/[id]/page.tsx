@@ -160,7 +160,7 @@ export default function OrderDetailPage() {
                                 </div>
                                 <div className="flex justify-between text-gray-600">
                                     <span>Envío:</span>
-                                    <span>${order.shipping.toFixed(2)}</span>
+                                    <span className="text-green-600 font-semibold">¡Gratis!</span>
                                 </div>
                                 <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
                                     <span>Total:</span>

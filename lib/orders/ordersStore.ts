@@ -28,7 +28,13 @@ export interface Order {
     items: OrderItem[];
     subtotal: number;
     discount: number;
-    shipping: number;
+    shipping: {
+        address: string;
+        city: string;
+        state: string;
+        zipCode: string;
+        instructions?: string;
+    };
     total: number;
     
     // Status

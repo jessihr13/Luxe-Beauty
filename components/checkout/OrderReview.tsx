@@ -45,35 +45,22 @@ export default function OrderReview() {
 
         // Save order to store
         const orderNumber = addOrder({
-            items: items.map(item => ({
-                productId: item.productId,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-                image: item.image
-            })),
-            customer: {
-                name: shipping.fullName,
-                email: shipping.email,
-                phone: shipping.phone
-            },
-            shipping: {
-                address: shipping.address.street,
-                city: shipping.address.city,
-                state: shipping.address.state,
-                zipCode: shipping.address.zipCode,
-                instructions: shipping.deliveryInstructions
-            },
-            payment: {
-                method: payment.type,
-                lastFourDigits: payment.type === 'card' && payment.cardDetails 
-                    ? payment.cardDetails.cardNumber.slice(-4)
-                    : undefined
-            },
-            subtotal,
-            shippingCost,
-            total,
-            status: 'pending'
+        items: items.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+        })),
+        
+        customerName: shipping.fullName,
+        customerEmail: shipping.email,
+        customerPhone: shipping.phone,
+        shipping: 0,
+        paymentMethod: payment.type as any,
+        subtotal,
+        total,
+        status: 'pending'
         });
 
         console.log('🎉 Order created:', orderNumber);
