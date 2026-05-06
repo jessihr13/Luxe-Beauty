@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCustomerStore } from '@/lib/customer/customerStore';
-import { useOrdersStore } from '@/lib/orders/ordersStore';
+import useOrdersStore from '@/lib/orders/ordersStore';
 import { OrderService } from '@/lib/services/orderService';
 import AccountLayout from '@/components/account/AccountLayout';
 import { Package, Truck, CheckCircle, Clock, MapPin, FileText, Download } from 'lucide-react';
