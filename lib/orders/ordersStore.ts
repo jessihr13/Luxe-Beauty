@@ -29,12 +29,12 @@ export interface Order {
     subtotal: number;
     discount: number;
     shipping: {
-        address: string;
-        city: string;
-        state: string;
-        zipCode: string;
-        instructions?: string;
-    };
+        address: shipping.address.street,
+        city: shipping.address.city,
+        state: shipping.address.state,
+        zipCode: shipping.address.zipCode,
+        instructions: shipping.deliveryInstructions,
+    },
     total: number;
     
     // Status
@@ -65,7 +65,7 @@ interface OrdersStore {
     orders: Order[];
     
     // Actions
-    addOrder: (order: Omit<Order, 'id' | 'updatedAt'>) => string;
+    addOrder: (order: Omit<Order, 'id' | 'updatedAt'>) => {
     updateOrder: (orderId: string, updates: Partial<Order>) => void;
     updateOrderStatus: (orderId: string, status: Order['status']) => void;
     
